@@ -23,7 +23,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($data['cars'] as $car): ?>
+                    <?php foreach ($cars as $car): ?>
                         <tr>
                             <td><?= (string)$car['id'] ?></td>
                             <td><?= (string)$car['brand'] ?></td>

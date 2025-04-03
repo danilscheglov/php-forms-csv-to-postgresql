@@ -18,8 +18,8 @@ class DatabaseConnection
         $this->password = (string) getenv('DB_PASSWORD');
 
         try {
-            $dsn = "pgsql:host={$this->host};port={$this->port};dbname={$this->dbname}";
-            $this->pdo = new PDO($dsn, $this->user, $this->password, [
+            $connection = "pgsql:host={$this->host};port={$this->port};dbname={$this->dbname}";
+            $this->pdo = new PDO($connection, $this->user, $this->password, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);

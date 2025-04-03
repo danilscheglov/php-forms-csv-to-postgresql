@@ -13,37 +13,54 @@ class CsvImporter
 
     public function import(): void
     {
+        $this->createTable();
+        $this->truncateTable();
+        $this->importData();
+    }
+
+    private function createTable(): void
+    {
+        $this->pdo->exec("
+            CREATE TABLE IF NOT EXISTS cars (
+                id SERIAL PRIMARY KEY,
+                brand VARCHAR(50) NOT NULL,
+                model VARCHAR(50) NOT NULL,
+                year INTEGER NOT NULL,
+                color VARCHAR(30) NOT NULL
+            )
+        ");
+    }
+
+    private function truncateTable(): void
+    {
+        $this->pdo->exec("TRUNCATE TABLE cars RESTART IDENTITY");
+    }
+
+    private function importData(): void
+    {
+        if (!file_exists($this->csvFile)) {
+            throw new RuntimeException("CSV file not found: " . $this->csvFile);
+        }
+
+        $file = fopen($this->csvFile, 'r');
         try {
-            $this->pdo->exec("
-                CREATE TABLE IF NOT EXISTS cars (
-                    id SERIAL PRIMARY KEY,
-                    brand VARCHAR(50) NOT NULL,
-                    model VARCHAR(50) NOT NULL,
-                    year INTEGER NOT NULL,
-                    color VARCHAR(30) NOT NULL
-                )
+            fgetcsv($file);
+
+            $stmt = $this->pdo->prepare("
+                INSERT INTO cars (brand, model, year, color) 
+                VALUES (?, ?, ?, ?)
             ");
 
-            $this->pdo->exec("TRUNCATE TABLE cars RESTART IDENTITY");
-
-            if (file_exists($this->csvFile)) {
-                $file = fopen($this->csvFile, 'r');
-                fgetcsv($file);
-                while (($row = fgetcsv($file)) !== false) {
-                    $stmt = $this->pdo->prepare("INSERT INTO cars (brand, model, year, color) VALUES (?, ?, ?, ?)");
-                    $stmt->execute([
-                        $row[0],
-                        $row[1],
-                        (int) $row[2],
-                        $row[3],
-                    ]);
-                }
-                fclose($file);
-            } else {
-                throw new RuntimeException("Файл CSV не найден: " . $this->csvFile);
+            while (($row = fgetcsv($file))) {
+                $stmt->execute([
+                    $row[0] ?? '',
+                    $row[1] ?? '',
+                    (int) ($row[2] ?? 0),
+                    $row[3] ?? '',
+                ]);
             }
-        } catch (PDOException $e) {
-            throw new RuntimeException("Ошибка импорта CSV: " . $e->getMessage());
+        } finally {
+            fclose($file);
         }
     }
 }
